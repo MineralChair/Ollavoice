@@ -139,7 +139,7 @@ Write-Step 'Installing Python packages'
 
 $Packages = @('numpy', 'soundfile')
 if (-not $NoStt) { $Packages += 'faster-whisper>=1.0' }
-if (-not $NoTts) { $Packages += @('piper-tts>=1.3', 'kokoro-onnx>=0.9') }
+if (-not $NoTts) { $Packages += @('piper-tts>=1.3', 'kokoro-onnx>=0.6.1') }
 if (-not $NoGui) { $Packages += 'PySide6>=6.6' }
 $Packages += 'sounddevice>=0.4.6'      # fallback mic/playback for the terminal mode
 
