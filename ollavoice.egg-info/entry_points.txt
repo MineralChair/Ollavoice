@@ -1,0 +1,5 @@
+[console_scripts]
+ollavoice = ollavoice.cli:main
+
+[gui_scripts]
+ollavoice-gui = ollavoice.gui.app:main

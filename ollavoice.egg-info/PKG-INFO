@@ -1,0 +1,319 @@
+Metadata-Version: 2.4
+Name: ollavoice
+Version: 1.0.0
+Summary: OllaVoice - local speech input (STT) and speech output (TTS) for Ollama. Native desktop GUI, 100% offline after setup.
+Author: OllaVoice contributors
+License: MIT
+Project-URL: Homepage, https://github.com/local/ollavoice
+Project-URL: Issues, https://github.com/local/ollavoice/issues
+Keywords: ollama,llm,speech,tts,stt,whisper,piper,kokoro,offline,local
+Classifier: Development Status :: 4 - Beta
+Classifier: Environment :: Win32 (MS Windows)
+Classifier: Environment :: X11 Applications :: Qt
+Classifier: Intended Audience :: End Users/Desktop
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Operating System :: MacOS
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3.13
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Classifier: Topic :: Multimedia :: Sound/Audio :: Speech
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: numpy>=1.24
+Requires-Dist: soundfile>=0.12
+Provides-Extra: stt
+Requires-Dist: faster-whisper>=1.0.0; extra == "stt"
+Provides-Extra: tts
+Requires-Dist: piper-tts>=1.3.0; extra == "tts"
+Requires-Dist: kokoro-onnx>=0.9.0; extra == "tts"
+Provides-Extra: gui
+Requires-Dist: PySide6>=6.6; extra == "gui"
+Provides-Extra: audio
+Requires-Dist: sounddevice>=0.4.6; extra == "audio"
+Provides-Extra: all
+Requires-Dist: ollavoice[audio,gui,stt,tts]; extra == "all"
+Dynamic: license-file
+
+# OllaVoice — local speech input and speech output for Ollama
+
+Ollama is text in, text out. It has no native microphone support and no native
+text-to-speech — the [feature request is still open](https://github.com/ollama/ollama/issues/11021)
+and the [official API](https://docs.ollama.com/api) has no audio endpoints as of
+v0.40.x. **OllaVoice is the missing layer**: a native desktop app that sits on top
+of your existing Ollama install and gives it ears and a voice.
+
+```
+   you ──▶ microphone ──▶ Whisper (local)  ─┐
+                                            ├─▶ Ollama (local) ─▶ Piper/Kokoro (local) ─▶ speakers
+   keyboard ────────────────────────────────┘
+```
+
+**Nothing leaves your machine.** No cloud API, no telemetry, no account, no
+licence key. Audio, transcription, generation and synthesis all run on your own
+hardware. Once setup has downloaded the models you can pull the network cable and
+it keeps working — the code refuses to phone home even to check for model updates.
+
+---
+
+## What you get
+
+| | |
+|---|---|
+| **Native desktop GUI** | Qt 6 app: chat transcript, push-to-talk mic button with a live level meter, model/voice pickers in the toolbar, dark theme, system tray, global hotkeys |
+| **Speech input** | OpenAI Whisper via `faster-whisper` (int8 on CPU, fp16 on CUDA). Optional: your own `whisper.cpp` build, or the recogniser built into Windows |
+| **Speech output** | **Piper** (fast, ~60 MB per voice, 100+ voices/languages) and **Kokoro-82M** (more natural, ~140 MB), switchable live. Falls back to the voices already installed in Windows |
+| **Sentence streaming** | The answer is spoken sentence-by-sentence *while* Ollama is still generating, so you hear audio in about a second instead of waiting for the whole reply |
+| **Terminal mode** | `ollavoice chat` — the same pipeline as a REPL, for SSH boxes and people who live in a terminal |
+| **Local HTTP API** | OpenAI-compatible `/v1/audio/transcriptions` and `/v1/audio/speech`, plus `/api/chat` for speech-in/speech-out. Loopback only |
+| **Browser UI** | Served by that same local server, for when you want a second window |
+| **Hands-free mode** | Optional adaptive VAD that ends your turn when you stop talking |
+| **Air-gapped installs** | `ollavoice bundle` makes a portable model folder; `setup --offline` installs from it |
+
+---
+
+## Quick start (Windows)
+
+1. Install [Ollama for Windows](https://ollama.com/download/windows) and pull a
+   model: `ollama pull llama3.2:3b`
+2. Install [Python 3.10 – 3.13](https://www.python.org/downloads/windows/)
+   (tick *Add python.exe to PATH*)
+3. Double-click **`install-windows.bat`**
+
+That creates `.venv`, installs the packages, detects your hardware, picks a
+performance tier, downloads the speech models, verifies the whole loop by
+synthesising a sentence and transcribing it back, and adds Start Menu shortcuts.
+
+Then press **Start → OllaVoice**, hold **Space**, and talk.
+
+<details>
+<summary>Prefer to do it by hand?</summary>
+
+```powershell
+cd ollavoice
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -e ".[all]"        # or: pip install -r requirements-windows.txt
+ollavoice setup                # hardware detection + model downloads + self-test
+ollavoice doctor --test        # prove the loop works
+ollavoice gui                  # launch the desktop app
+```
+</details>
+
+Linux and macOS: `./scripts/setup.sh` (see [docs/INSTALL-windows.md](docs/INSTALL-windows.md)
+for the full Windows guide, including offline/air-gapped installs and building a
+standalone `.exe`).
+
+---
+
+## Using it
+
+### Desktop app
+
+| Action | How |
+|---|---|
+| Talk | Hold **Space**, or hold the mic button, or **Ctrl+Alt+Space** anywhere in Windows |
+| Send | Release the key/button |
+| Type instead | Click the text box, press Enter |
+| Stop the voice | **Esc**, the Stop button, or **Ctrl+Alt+X** anywhere |
+| New conversation | **Ctrl+N** |
+| Read the last answer again | **Ctrl+R** |
+| Settings | **Ctrl+,** |
+| Transcribe a recording | File → Transcribe an audio file |
+
+The global hotkeys use `RegisterHotKey`, so push-to-talk works even when
+OllaVoice is in the background — the tray icon stays resident and the window can
+be closed without quitting.
+
+### Terminal
+
+```powershell
+ollavoice chat                 # hold Enter to record, Enter again to send
+ollavoice chat --hands-free    # auto-detect end of speech
+ollavoice chat -p "explain what a GGUF file is"
+```
+
+Inside the REPL: `/help`, `/voice`, `/model qwen3:8b`, `/tts kokoro`,
+`/rate 1.2`, `/lang de`, `/voices`, `/new`, `/save notes.txt`, `/doctor`, `/gui`.
+
+### One-shot commands
+
+```powershell
+ollavoice listen                                   # mic -> transcript on stdout
+ollavoice listen -d 5 --save-audio take.wav        # fixed 5 second recording
+ollavoice transcribe meeting.wav --timestamps -o meeting.txt
+ollavoice speak "Read this aloud" 
+ollavoice speak -f notes.md -o notes.wav --engine kokoro --kokoro-voice af_heart
+ollavoice voices --all --language de               # browse the Piper catalogue
+ollavoice voices --install de_DE-thorsten-high
+ollavoice serve                                    # local API + browser UI
+ollavoice doctor --test                            # full self-test
+ollavoice bundle D:\ollavoice-bundle               # offline bundle for another PC
+```
+
+### Local HTTP API
+
+`ollavoice serve` (or Settings → Advanced → *Run the local speech API*) exposes:
+
+```http
+POST /v1/audio/transcriptions     multipart: file, model?, language?, response_format?
+POST /v1/audio/speech             {"input": "...", "voice": "...", "speed": 1.0}  -> audio/wav
+POST /api/chat                    {"text": "..."} or {"audio_b64": "..."}         -> {"text", "audio_b64"}
+GET  /health  /config  /voices    status
+GET  /                            browser UI with a push-to-talk button
+```
+
+The first two are OpenAI-shaped, so existing tooling can point at
+`http://127.0.0.1:8787/v1` instead of a cloud provider:
+
+```powershell
+curl.exe http://127.0.0.1:8787/v1/audio/transcriptions -F "file=@take.wav"
+curl.exe http://127.0.0.1:8787/v1/audio/speech -H "Content-Type: application/json" `
+       -d '{\"input\":\"Hello from localhost\",\"voice\":\"en_GB-alan-medium\"}' -o hello.wav
+```
+
+It binds to loopback and has **no authentication** — do not expose it to a
+network you do not trust.
+
+---
+
+## Performance tiers
+
+`ollavoice setup` measures your CPU, RAM and VRAM and picks a tier. You can
+override it any time (`ollavoice config --tier high`, or Settings → General).
+
+| Tier | Ollama model | Whisper | Voice | Speech models | Best for |
+|---|---|---|---|---|---|
+| `low` | `qwen3:4b` | `base.en` | Piper `en_US-lessac-medium` | ~320 MB | CPU-only laptops, no AVX2 |
+| `balanced` | `qwen3:8b` | `small.en` | Piper `en_US-lessac-high` | ~700 MB | Default. 8 GB+ RAM or any 6 GB+ GPU |
+| `high` | `qwen3:14b` | `medium.en` | Kokoro `af_heart` | ~1.7 GB | 12 GB+ VRAM |
+
+Real numbers from a deliberately crippled test box (2 CPU cores, 1 GB RAM, no
+GPU — i.e. much worse than your machine):
+
+| Stage | Result |
+|---|---|
+| Piper synthesis | 5.9 s of audio in 5.1 s (1.15× realtime) |
+| Whisper `base.en` | 5.9 s of audio in 1.6 s (**0.28× realtime**) |
+| Kokoro int8 | 4.4 s of audio in 18.6 s (4× realtime — this is why Piper is the default) |
+
+Sentence streaming hides most of the synthesis cost: the first sentence is
+usually spoken before the model has finished thinking.
+
+---
+
+## Requirements
+
+* **Ollama** running locally, with at least one model pulled
+* **Python 3.10 – 3.13** (64-bit). 3.11/3.12 have the best wheel coverage
+* **Windows 10/11**, Linux or macOS. Windows is the primary target
+* A microphone and speakers
+* Disk: ~1 GB for the balanced tier (plus your Ollama models)
+* Optional: an NVIDIA GPU for faster Whisper (`float16` is selected automatically)
+
+Python packages, all with prebuilt Windows wheels (no compiler needed):
+`numpy`, `soundfile`, `faster-whisper`, `piper-tts`, `kokoro-onnx`, `PySide6`,
+`sounddevice`. The `piper-tts` and `espeakng-loader` wheels bundle espeak-ng and
+its phoneme data, so there is nothing to compile or install system-wide.
+
+---
+
+## How it stays offline
+
+* Setup is the **only** network step. Downloads come from Hugging Face
+  (Whisper, Piper voices), GitHub releases (Kokoro) and your local Ollama server.
+* Once a Whisper model is on disk, `HF_HUB_OFFLINE` is set automatically so
+  `huggingface_hub` does not check for revisions on every start.
+* `OLLAVOICE_OFFLINE=1` (or `setup --offline`) makes every download call fail
+  fast with the exact path to copy the file to, instead of hanging on a blocked
+  network.
+* `ollavoice bundle <folder>` copies everything you downloaded into a portable
+  folder for an air-gapped machine.
+* The local API binds to `127.0.0.1`. There is no telemetry, no update check and
+  no crash reporting anywhere in the codebase.
+
+To verify for yourself: run it with the network disabled and watch
+`ollavoice doctor --test` pass.
+
+---
+
+## Configuration
+
+One JSON file: `%APPDATA%\OllaVoice\config.json`
+(models live in `%LOCALAPPDATA%\OllaVoice\models`).
+
+```powershell
+ollavoice config show
+ollavoice config get tts.piper_voice
+ollavoice config set tts.engine kokoro
+ollavoice config set tts.kokoro_voice am_michael
+ollavoice config set stt.model medium.en
+ollavoice config set stt.language de
+ollavoice config set vad.enabled true          # hands-free listening
+ollavoice config set hotkeys.push_to_talk "Ctrl+Shift+Space"
+ollavoice config --tier high
+```
+
+Every key is also in the GUI (Settings, five tabs) and documented in
+[`ollavoice/config.py`](ollavoice/config.py).
+
+---
+
+## Project layout
+
+```
+ollavoice/
+├── install-windows.bat          double-click installer
+├── scripts/setup.ps1            Windows installer (venv, packages, models, shortcuts)
+├── scripts/setup.sh             Linux/macOS installer
+├── scripts/build-windows-exe.ps1  PyInstaller build of OllaVoice.exe
+├── packaging/OllaVoice.spec
+├── run_gui.py                   entry point for the frozen exe
+├── docs/                        INSTALL-windows, ARCHITECTURE, TROUBLESHOOTING
+├── tests/                       250+ tests incl. real Piper+Whisper round trips
+└── ollavoice/
+    ├── cli.py  repl.py  server.py  setup.py
+    ├── pipeline.py              mic -> Whisper -> Ollama -> TTS orchestration
+    ├── config.py  hardware.py  paths.py  downloads.py  voices.py
+    ├── stt_engines.py           faster-whisper / whisper.cpp / ollama / windows
+    ├── tts_engines.py           piper / kokoro / sapi / silent
+    ├── vad.py  textsplit.py  wav.py  audioio.py  ollama_client.py
+    ├── gui/                     main_window, settings_dialog, workers, hotkeys, theme
+    └── server/static/           the browser UI
+```
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for how the pieces fit
+together, and [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) when something
+misbehaves.
+
+---
+
+## Development
+
+```bash
+pip install -e ".[all]" pytest ruff
+pytest -q                              # 250+ tests, no downloads, no audio hardware
+OLLAVOICE_IT=1 pytest -q               # + real Piper/Whisper round trips
+ruff check . --select=F,E9 --preview
+```
+
+The GUI tests run against a permissive fake `PySide6` when Qt cannot load
+([`tests/qt_stub/`](tests/qt_stub/__init__.py)), so they work in headless CI and
+still catch typos, bad imports and construction-time errors. With real Qt
+installed they construct the actual window on the `offscreen` platform.
+
+---
+
+## Legal
+
+MIT licensed — see [LICENSE](LICENSE).
+
+OllaVoice is an independent companion tool. **Ollama** is a trademark of its
+respective owner; this project is not affiliated with or endorsed by the Ollama
+project. Whisper (OpenAI), faster-whisper, Piper, Kokoro, espeak-ng and Qt belong
+to their respective authors and are used under their own licences. Model weights
+keep their upstream licences — check them before redistributing a bundle.
