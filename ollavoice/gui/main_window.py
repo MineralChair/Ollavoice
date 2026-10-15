@@ -347,7 +347,7 @@ class MainWindow(QMainWindow):
         self.w.signals.finished.connect(lambda: None)
 
     def _startup(self) -> None:
-        self.s.request_warm.emit()
+        self.w.request_warm.emit()
         self._on_log(f"config: {_paths.config_file()}")
         if self.cfg.server.enabled:
             self.act_server.setChecked(True)
@@ -546,11 +546,11 @@ class MainWindow(QMainWindow):
             return
         self.input_edit.clear()
         self._set_busy(True)
-        self.s.request_turn.emit(None, text, self.chk_speak.isChecked())
+        self.w.request_turn.emit(None, text, self.chk_speak.isChecked())
 
     def start_turn_from_audio(self, clip: AudioClip) -> None:
         self._set_busy(True)
-        self.s.request_turn.emit(clip, "", self.chk_speak.isChecked())
+        self.w.request_turn.emit(clip, "", self.chk_speak.isChecked())
 
     # ------------------------------------------------------------------ #
     # Microphone capture (push-to-talk + hands-free)
@@ -813,7 +813,7 @@ class MainWindow(QMainWindow):
         self.pipeline.reload_engines()
         self.lbl_tts.setText(f"tts: {engine}")
         self.statusBar().showMessage(f"speech output: {engine}", 4000)
-        self.s.request_warm.emit()
+        self.w.request_warm.emit()
 
     def _on_voice_changed(self) -> None:
         voice = self.voice_combo.currentText().strip()
@@ -832,7 +832,7 @@ class MainWindow(QMainWindow):
         save_config(self.cfg)
         self.pipeline.reload_engines()
         self.statusBar().showMessage(f"voice: {voice}", 4000)
-        self.s.request_speak.emit("Voice changed.")
+        self.w.request_speak.emit("Voice changed.")
 
     def _on_rate_changed(self, value: int) -> None:
         rate = value / 100.0
@@ -953,7 +953,7 @@ class MainWindow(QMainWindow):
         if not self._last_answer:
             self.statusBar().showMessage("Nothing to repeat yet", 3000)
             return
-        self.s.request_speak.emit(self._last_answer)
+        self.w.request_speak.emit(self._last_answer)
 
     def import_audio(self) -> None:
         path, _ = QFileDialog.getOpenFileName(
@@ -1000,7 +1000,7 @@ class MainWindow(QMainWindow):
 
     def reload_engines(self) -> None:
         self.pipeline.reload_engines()
-        self.s.request_warm.emit()
+        self.w.request_warm.emit()
         self.statusBar().showMessage("Reloading speech engines...", 4000)
 
     def open_settings(self) -> None:
@@ -1037,7 +1037,7 @@ class MainWindow(QMainWindow):
             self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, bool(cfg.gui.always_on_top))
             self.show()
 
-        self.s.request_warm.emit()
+        self.w.request_warm.emit()
         self.refresh_models()
         self._toggle_server(bool(cfg.server.enabled))
         self.act_server.blockSignals(True)
