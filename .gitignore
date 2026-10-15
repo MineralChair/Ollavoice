@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# Tooling caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.log
+
+# PyInstaller
+*.manifest
+build-OllaVoice/
+
+# OllaVoice runtime state (never commit a user's models or transcripts)
+vendor/
+models/
+*.onnx
+*.onnx.json
+*.bin
+*.gguf
+*.wav
+!samples/*.wav
+!tests/fixtures/*.wav
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp

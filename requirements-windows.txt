@@ -1,0 +1,40 @@
+# =============================================================================
+# OllaVoice - complete Windows runtime requirements.
+#
+#   pip install -r requirements-windows.txt
+#
+# Every one of these ships prebuilt wheels for Windows amd64 on Python
+# 3.10 - 3.13, so no compiler and no system packages are needed.
+#
+# All of it is local inference: no cloud SDKs, no telemetry packages.
+# =============================================================================
+
+# --- core -------------------------------------------------------------------
+numpy>=1.24,<3
+soundfile>=0.12
+
+# --- speech-to-text (Whisper on CTranslate2) --------------------------------
+# Pulls in ctranslate2, tokenizers, huggingface_hub and av (ffmpeg libs
+# bundled in the wheel, which is what decodes mp3/ogg/webm uploads).
+faster-whisper>=1.0.0
+
+# --- text-to-speech ----------------------------------------------------------
+# piper-tts bundles espeak-ng and its phoneme data in the wheel (34 MB).
+piper-tts>=1.3.0
+# kokoro-onnx pulls onnxruntime + espeakng_loader (its own espeak-ng data).
+kokoro-onnx>=0.9.0
+
+# --- desktop GUI -------------------------------------------------------------
+# Includes QtMultimedia, which provides both microphone capture and playback,
+# so the GUI needs no other audio library.
+PySide6>=6.6
+
+# --- microphone/playback fallback for the terminal and server modes ----------
+# The Windows wheel bundles PortAudio (sounddevice.dll), so this is enough to
+# record and play without Qt.
+sounddevice>=0.4.6
+
+# --- OllaVoice itself --------------------------------------------------------
+# Comment this line out if you pip install the packages by hand and run from a
+# checkout with PYTHONPATH set instead.
+-e .

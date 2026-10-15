@@ -1,0 +1,15 @@
+include README.md
+include LICENSE
+include requirements.txt
+include requirements-windows.txt
+include install-windows.bat
+include run_gui.py
+recursive-include docs *.md
+recursive-include scripts *.ps1 *.sh
+recursive-include packaging *.spec
+recursive-include .github *.yml
+recursive-include ollavoice/server/static *.html *.js *.css
+recursive-include tests *.py
+exclude _patch*.py
+global-exclude __pycache__/*
+global-exclude *.py[cod]

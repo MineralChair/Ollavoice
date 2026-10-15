@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ollavoice"
+version = "1.0.0"
+description = "OllaVoice - local speech input (STT) and speech output (TTS) for Ollama. Native desktop GUI, 100% offline after setup."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "OllaVoice contributors" }]
+keywords = ["ollama", "llm", "speech", "tts", "stt", "whisper", "piper", "kokoro", "offline", "local"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Win32 (MS Windows)",
+    "Environment :: X11 Applications :: Qt",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+]
+
+# Core runtime. Every one of these is a local, offline inference library -
+# no cloud services are contacted at runtime, ever.
+dependencies = [
+    "numpy>=1.24",
+    "soundfile>=0.12",
+]
+
+[project.optional-dependencies]
+# Speech-to-text (Whisper via CTranslate2 - CPU int8 by default, CUDA optional)
+stt = ["faster-whisper>=1.0.0"]
+# Text-to-speech: Piper + Kokoro (both wheels bundle espeak-ng phonemiser data)
+tts = ["piper-tts>=1.3.0", "kokoro-onnx>=0.9.0"]
+# Native desktop GUI (Qt6). Includes QtMultimedia for mic capture + playback.
+gui = ["PySide6>=6.6"]
+# Alternative mic/playback backend used by the headless CLI on machines without Qt.
+audio = ["sounddevice>=0.4.6"]
+# Everything, for the normal desktop install.
+all = ["ollavoice[stt,tts,gui,audio]"]
+
+[project.scripts]
+ollavoice = "ollavoice.cli:main"
+
+[project.gui-scripts]
+ollavoice-gui = "ollavoice.gui.app:main"
+
+[tool.setuptools.packages.find]
+include = ["ollavoice*"]
+
+[tool.setuptools.package-data]
+ollavoice = ["server/static/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = ["integration: tests that download models or need real audio hardware (deselected by default)"]
