@@ -99,7 +99,13 @@ Python was not found. Install Python 3.10 - 3.13 from https://www.python.org/dow
 $VersionArgs = @('-c', 'import sys; print("%d.%d" % sys.version_info[:2])')
 if ($PythonExe -eq 'py') { $VersionArgs = @('-3') + $VersionArgs }
 try {
-    $PyVersion = (& $PythonExe @VersionArgs 2>$null | Select-Object -Last 1).Trim()
+    $VersionOutput = & $PythonExe @VersionArgs 2>$null
+    $VersionExit = $LASTEXITCODE
+    $PyVersion = (($VersionOutput | ForEach-Object { [string]$_ }) -join "`n").Trim()
+
+    if ($VersionExit -ne 0) {
+        $PyVersion = ''
+    }
 } catch {
     $PyVersion = ''
 }
